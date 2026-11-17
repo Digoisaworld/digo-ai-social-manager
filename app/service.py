@@ -16,9 +16,9 @@ def publish_once() -> dict:
             return {"status":"duplicate_blocked"}
     stamp=datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     image_path=generate_image(data["image_prompt"],f"media/digo-{stamp}")
-    tg_id=""; x_id=""; errors=[]
+    tg_result={}; x_id=""; errors=[]
     try:
-        tg_id=publish_telegram(data["telegram_text"],image_path)
+        tg_result=publish_telegram(data["telegram_text"],image_path)
     except Exception as exc:
         log.exception("Telegram publishing failed")
         errors.append("Telegram: "+str(exc))
@@ -30,8 +30,9 @@ def publish_once() -> dict:
     with SessionLocal() as db:
         db.add(PublishedPost(topic=data["topic"],telegram_text=data["telegram_text"],
              x_text=data["x_text"],source_urls=json.dumps(data["source_urls"]),
-             image_path=image_path,telegram_message_id=tg_id,x_post_id=x_id,content_hash=digest))
+             image_path=image_path,telegram_message_id=json.dumps(tg_result),
+             x_post_id=x_id,content_hash=digest))
         try: db.commit()
         except IntegrityError: db.rollback()
-    return {"status":"partial" if errors else "published","telegram_message_id":tg_id,
+    return {"status":"partial" if errors else "published","telegram":tg_result,
             "x_post_id":x_id,"errors":errors}
