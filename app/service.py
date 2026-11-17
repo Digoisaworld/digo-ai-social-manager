@@ -15,8 +15,7 @@ def publish_once() -> dict:
         if db.scalar(select(PublishedPost).where(PublishedPost.content_hash==digest)):
             return {"status":"duplicate_blocked"}
     stamp=datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    image_path=f"media/digo-{stamp}.jpg"
-    generate_image(data["image_prompt"],image_path)
+    image_path=generate_image(data["image_prompt"],f"media/digo-{stamp}")
     tg_id=""; x_id=""; errors=[]
     try:
         tg_id=publish_telegram(data["telegram_text"],image_path)
