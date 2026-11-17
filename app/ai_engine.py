@@ -57,6 +57,11 @@ def generate_image(prompt: str, output_path: str) -> str:
     response.raise_for_status()
     if not response.headers.get("content-type","").startswith("image/"):
         raise RuntimeError("Pollinations did not return an image response")
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(output_path).write_bytes(response.content)
-    return output_path
+    content_type = response.headers.get("content-type", "image/jpeg").split(";")[0].lower()
+    suffix = {"image/png": ".png", "image/webp": ".webp", "image/jpeg": ".jpg"}.get(content_type)
+    if not suffix:
+        raise RuntimeError(f"Unsupported image content type: {content_type}")
+    final_path = str(Path(output_path).with_suffix(suffix))
+    Path(final_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(final_path).write_bytes(response.content)
+    return final_path
